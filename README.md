@@ -56,6 +56,9 @@ http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0
 -OR-
 http://metadata/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip
 
+#### open issue
+[https://stackoverflow.com/questions/25708617/spring-4-websocket-configure-port](https://stackoverflow.com/questions/25708617/spring-4-websocket-configure-port)
+
 ### Ref
 [http://docs.spring.io/spring/docs/current/spring-framework-reference/html/websocket.html](http://docs.spring.io/spring/docs/current/spring-framework-reference/html/websocket.html)
 
