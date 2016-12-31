@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Spring 4 WebSocket</title>
+</head>
+<body >
+
+  <strong>Note:</strong> 
+  <p>In order to use websockets on App Engine Flexible Environment, app need to connect directly to application instance using the instance's public external IP. This IP can be obtained from the metadata server.</p>
+  <p>All MVC/Rest (http://) call should still serve from 8080 and web socket (ws://) should server from 65080 port and in App Engine Flexible Environment ws:// server from ws://external_ip:65080</p>
+
+  <input id="wsurlPrefix" type="text">
+  <br/>
+  <br/>
+
+  <hr/>
+  <section>
+    <div>
+      <button id="connect" onclick="connect();">Connect</button>
+      <button id="disconnect" disabled="disabled" onclick="disconnect();">Disconnect</button><br/><br/>
+    </div>
+    <div id="calculationDiv">
+      <label>Number One:</label><input type="text" id="num1" /><br/>
+      <label>Number Two:</label><input type="text" id="num2" /><br/>
+      <button id="sendNum" onclick="sendNum();">Send 1</button>
+      <p id="calResponse"></p>
+    </div>
+  </section>
+
+  <hr/>
+  <section>
+    <button onclick="connect2();">Connect2</button>
+    <button onclick="disconnect2();">Disconnect2</button>
+    <br/>
+    <input type="text" id="text2" /><br/>
+    <button onclick="send2();">Send 2</button>    
+    <p id="calResponse2"></p>
+  </section>
+
+  <hr/>
+  <section>
+    <button onclick="connect3();">Connect3</button>
+    <button onclick="disconnect3();">Disconnect3</button>
+    <br/>
+    <input type="text" id="text3" /><br/>
+    <button onclick="send3();">Send 3</button>    
+    <p id="calResponse3"></p>
+  </section>    
+
+
+  <script src="js/stomp-2.3.3.js"></script>
+  <script src="js/sockjs-1.1.0.js"></script>
+  <script src="js/jquery-2.1.4.min.js"></script>
+  
+  <script type="text/javascript">
+    //var webSocketHost = 'ws://';
+    //var webSocketUri =  webSocketHost + externalIp + ':65080/echo';
+  	var webSocketBaseUriX = '';//externalIp
+  	var webSocketBaseUri1 = ''; 
+
+  	(function(){
+      $.ajax({url: "get-ws-url", success: function(result){
+        $("#wsurlPrefix").val(result);
+        webSocketBaseUriX = result;
+      }});
+  	})(); 
+
+    function setConnected(connected) {
+      document.getElementById('connect').disabled = connected;
+      document.getElementById('disconnect').disabled = !connected;
+      document.getElementById('calculationDiv').style.visibility = connected ? 'visible' : 'hidden';
+      document.getElementById('calResponse').innerHTML = '';
+    }
+
+    var stompClient = null; 
+    function connect() {
+    //   var socket = new SockJS(webSocketBaseUri1 + '/add'); // use SockJS implementation instead of the browser's native implementation
+		  // stompClient = Stomp.over(socket);// -OR- Stomp.client(url) //initialization
+		  // stompClient = Stomp.client('ws://localhost:8080' + '/add');
+		  webSocketBaseUriX = $("#wsurlPrefix").val();//$("#div1").html();
+		  var url = webSocketBaseUriX + '/add';
+		  console.log('url ', url);
+		  //stompClient = Stomp.overTCP(url, 65080);
+		  stompClient = Stomp.client(url);
+      stompClient.connect({}, function(frame) {
+        setConnected(true);
+        console.log('Connected: ' + frame);
+        stompClient.subscribe(webSocketBaseUri1 + '/topic/showResult', function(calResult){
+        	showResult('calResponse', JSON.parse(calResult.body).result);
+        });
+      });
+    }
+    function disconnect() {
+      stompClient.disconnect();
+      setConnected(false);
+      console.log("Disconnected");
+    }
+    function sendNum() {
+      var num1 = document.getElementById('num1').value;
+      var num2 = document.getElementById('num2').value;
+      stompClient.send(webSocketBaseUri1 + '/app/addnum', {}, JSON.stringify({ 'num1': num1, 'num2': num2 }));
+    }  
+    function showResult(id, message) {
+      var response = document.getElementById(id);
+      var p = document.createElement('p');
+      p.style.wordWrap = 'break-word';
+      p.appendChild(document.createTextNode(message));
+      response.appendChild(p);
+    }
+
+    // ------------------------------------------------------------------      
+    var sock;
+    function connect2() {
+      //webSocketBaseUriX = $("#wsurlPrefix").val();
+      //var url =  'http://localhost:8080/greeting';
+      var url =  '/greeting';
+      sock = new SockJS(url);
+      sock.onopen = function() {
+        console.log('open');
+      };	      
+      sock.onmessage = function(e) {
+        console.log('message', e.data);
+        showResult('calResponse2', e.data);
+      }
+      sock.onclose = function() {
+			 console.log('close');
+    	};
+    }
+    function send2() {
+    	var text = document.getElementById('text2').value;
+		  sock.send(text);    	  
+    }
+    function disconnect2() {
+      sock.close();
+    }
+
+
+    var websocket;
+    function connect3() {
+      webSocketBaseUriX = $("#wsurlPrefix").val();
+      var wsUri = webSocketBaseUriX + '/messages'
+      websocket = new WebSocket(wsUri);
+      websocket.onopen = function(evt) { onOpen(evt) };
+      websocket.onclose = function(evt) { onClose(evt) };
+      websocket.onmessage = function(evt) { onMessage(evt) };
+      websocket.onerror = function(evt) { onError(evt) };
+    };
+    function onOpen(evt){
+      console.log('onOpen evt', evt);
+    }      
+    function onClose(evt){
+      console.log('onOpen evt', evt);
+    }      
+    function onMessage(evt){
+      console.log('onOpen evt', evt);
+      showResult('calResponse3', evt.data);//JSON.stringify(evt);      
+    }      
+    function onError(evt){
+      console.log('onOpen evt', evt);
+    }
+
+    function send3() {
+      var text = document.getElementById('text3').value;
+      websocket.send(text);       
+    }
+    function disconnect3() {
+      websocket.close();
+    }
+
+  </script>
+  
+</body>
+</html>
